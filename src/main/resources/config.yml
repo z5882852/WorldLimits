@@ -1,0 +1,24 @@
+# 配置文件
+
+# 玩家登录游戏时检测
+join_detection: true
+
+# 玩家进入家园时检测
+changed_world_detection: true
+
+# 控制台输出信息
+console_show: true
+
+# 检测半径(格)
+check_radius: 80
+
+# 忽略的世界名
+ignore_world_name:
+  - "world"
+
+# 忽略的方块名（增加遍历速度）
+ignore_block_name:
+  - "AIR"
+  - "STONE"
+  - "DIRT"
+  - "LEAVES"

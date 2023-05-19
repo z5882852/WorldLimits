@@ -4,5 +4,21 @@ main: me.z5882852.worldlimits.WorldLimits
 description: 我的世界家园限制插件
 
 commands:
-  wl:
+  worldlimits:
+    aliases: [wl]
     description: 测试
+
+permissions:
+  worldlimits.check:
+    description: "所有管理员权限"
+    default: false
+
+  worldlimits.admin:
+    description: "所有管理员权限"
+    default: op
+    children:
+      worldlimits.admin.add: true
+      worldlimits.admin.clear: true
+      worldlimits.admin.reload: true
+
+
