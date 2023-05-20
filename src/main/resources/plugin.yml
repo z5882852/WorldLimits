@@ -2,6 +2,7 @@ name: WorldLimits
 version: '${project.version}'
 main: me.z5882852.worldlimits.WorldLimits
 description: 我的世界家园限制插件
+depend: [NBTAPI]
 
 commands:
   worldlimits:
