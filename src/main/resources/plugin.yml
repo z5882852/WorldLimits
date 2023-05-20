@@ -11,7 +11,7 @@ commands:
 
 permissions:
   worldlimits.check:
-    description: "所有管理员权限"
+    description: "免检查限制方块权限"
     default: false
 
   worldlimits.admin:

@@ -6,6 +6,9 @@ join_detection: true
 # 玩家进入家园时检测
 changed_world_detection: true
 
+# 是否清除超过限制的方块
+clear_block: true
+
 # 控制台输出信息
 console_show: true
 

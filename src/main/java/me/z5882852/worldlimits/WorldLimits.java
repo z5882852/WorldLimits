@@ -1,6 +1,8 @@
 package me.z5882852.worldlimits;
 
 import me.z5882852.worldlimits.Commands.Commands;
+import me.z5882852.worldlimits.event.BlockBreak;
+import me.z5882852.worldlimits.event.BlockPlace;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -24,12 +26,12 @@ import java.util.regex.Pattern;
 public final class WorldLimits extends JavaPlugin implements Listener {
     public static WorldLimits thisPlugin;
     private static ConfigurationSection cfg;
-    private static YamlConfiguration limitsData;
-    private static YamlConfiguration playerData;
+    public static YamlConfiguration limitsData;
+    public static YamlConfiguration worldData;
 
     @Override
     public void onEnable() {
-        getLogger().info("WorldLimits插件正在初始化中...");
+        Bukkit.getLogger().info("WorldLimits插件正在初始化中...");
         // 创建和加载文件
         saveDefaultConfig();
         createYamlConfiguration("data.yml");
@@ -37,14 +39,16 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
         thisPlugin = this;
         cfg = this.getConfig();
-        playerData = getYamlConfiguration("data.yml");
         limitsData = getYamlConfiguration("limits.yml");
+        worldData = getYamlConfiguration("data.yml");
 
         // 注册事件和命令
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getPluginCommand("worldlimits").setExecutor(new Commands(this));
+        Bukkit.getServer().getPluginManager().registerEvents(new BlockPlace(), this);
+        Bukkit.getServer().getPluginManager().registerEvents(new BlockBreak(), this);
 
-        getLogger().info("WorldLimits插件加载完成!");
+        Bukkit.getLogger().info("WorldLimits插件加载完成!");
     }
 
     @Override
@@ -77,8 +81,8 @@ public final class WorldLimits extends JavaPlugin implements Listener {
     public void onReload() {
         this.reloadConfig();
         cfg = this.getConfig();
-        playerData = getYamlConfiguration("data.yml");
         limitsData = getYamlConfiguration("limits.yml");
+        worldData = getYamlConfiguration("data.yml");
     }
 
     public void reloadLimitData() {limitsData = getYamlConfiguration("limits.yml");
@@ -109,7 +113,12 @@ public final class WorldLimits extends JavaPlugin implements Listener {
     public static void checkBlockAndClear(String worldName, Player player) {
         long startTime = System.currentTimeMillis();
         World world = Bukkit.getWorld(worldName);
+        if(player.hasPermission("worldlimits.check")) {
+            sendConsoleMessage("玩家 " + player.getName() + " 拥有免检查权限");
+            return;
+        }
         if (cfg.getStringList("ignore_world_name").contains(worldName)) {
+            sendConsoleMessage("世界 " + worldName + " 拥有免检查权限");
             return;
         }
         Map<String, Integer> countBlocks =  countBlocksInRadius(world, player, cfg.getInt("check_radius"));
@@ -118,14 +127,21 @@ public final class WorldLimits extends JavaPlugin implements Listener {
             for (Map.Entry<String, Integer> entry : countBlocks.entrySet()) {
                 String mapKey = entry.getKey();
                 Integer mapValue = entry.getValue();
-                System.out.println(mapKey + "的数量为: " + mapValue);
+                thisPlugin.getLogger().info(mapKey + "的数量为: " + mapValue);
             }
         }
-        List<String> blockLimitExceeded = checkBlocksLimit(countBlocks);
+        List<String> blockLimitExceeded = checkBlocksLimitExceeded(countBlocks);
         sendConsoleMessage("超出限制的方块有: " + blockLimitExceeded);
-
-        clearBlocks(world, player, cfg.getInt("check_radius"), blockLimitExceeded);
-
+        for (String blockId : blockLimitExceeded) {
+            player.sendMessage("该世界中 " + countBlocks.get(blockId) + " 方块数量超出限制。");
+        }
+        if (blockLimitExceeded.size() != 0) {
+            if (cfg.getBoolean("clear_block")) {
+                clearBlocks(world, player, cfg.getInt("check_radius"), blockLimitExceeded);
+            }
+        } else {
+            setWorldData(worldName, countBlocks);
+        }
         long endTime = System.currentTimeMillis();
         long executionTime = endTime - startTime;
         sendConsoleMessage("代码执行时间为：" + executionTime + "毫秒");
@@ -190,7 +206,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         return blockCount;
     }
 
-    public static List<String> checkBlocksLimit(Map<String, Integer> blocksCount) {
+    public static List<String> checkBlocksLimitExceeded(Map<String, Integer> blocksCount) {
         List<String> blockLimitExceeded = new ArrayList<>();
         Set<String> limitsBlockList = limitsData.getKeys(false);
         for (String limitBlockName : limitsBlockList) {
@@ -239,6 +255,16 @@ public final class WorldLimits extends JavaPlugin implements Listener {
                 }
             }
         }
+        // 重新记录世界限制数量
+        setWorldData(world.getName(), countBlocksInRadius(world, player, cfg.getInt("check_radius")));
+    }
+
+    public static void setWorldData(String worldName, Map<String, Integer> limitsBlock) {
+        for (Map.Entry<String, Integer> entry : limitsBlock.entrySet()) {
+            String mapKey = entry.getKey();
+            Integer mapValue = entry.getValue();
+            worldData.set(worldName + "." + mapKey, mapValue);
+        }
     }
 
     public static int getMEKAMachineBlockRecipeType(Block block) {
@@ -264,6 +290,24 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         } else {
             return -1;
         }
+    }
+
+    public static String getBlockId(Block block) {
+        String blockId;
+        if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK")) {
+            blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
+        } else {
+            blockId = block.getType().toString() + ":" + block.getData();
+        }
+        return blockId;
+    }
+
+    public static boolean isIgnoreBlock(Block block) {
+        return cfg.getStringList("ignore_block_name").contains(block.getType().toString());
+    }
+    public static boolean isLimitBlock(Block block) {
+        int limitNumber = limitsData.getInt(getBlockId(block) + ".limit", -1);
+        return limitNumber != -1;
     }
 
     public static void sendConsoleMessage(String message) {
