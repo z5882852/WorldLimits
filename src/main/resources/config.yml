@@ -9,6 +9,9 @@ changed_world_detection: true
 # 是否清除超过限制的方块
 clear_block: true
 
+# 清除时是否发送消息
+clear_message: true
+
 # 控制台输出信息
 console_show: true
 

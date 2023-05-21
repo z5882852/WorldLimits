@@ -1,8 +1,7 @@
 package me.z5882852.worldlimits.Commands;
 
 
-import de.tr7zw.nbtapi.NBTBlock;
-import org.bukkit.Bukkit;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -18,7 +17,6 @@ import me.z5882852.worldlimits.WorldLimits;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class Commands implements CommandExecutor{
     private File dataFile;
@@ -42,13 +40,17 @@ public class Commands implements CommandExecutor{
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]您不是一个玩家。");
                     return false;
                 }
-                if (args.length != 2) {
-                    sender.sendMessage(ChatColor.YELLOW + "用法:/wl add <限制数量> 请对准方块使用。");
+                if (args.length < 2 || args.length > 3) {
+                    sender.sendMessage(ChatColor.YELLOW + "用法:/wl add <限制数量> <方块大小> 请对准方块使用,方块大小默认为1。");
                     return true;
                 }
                 if (!checkInteger(args[1])) {
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]你输入的不是整数。");
                     return true;
+                }
+                int blockSize = 1;
+                if (args.length == 3 && checkInteger(args[2])) {
+                    blockSize = Integer.parseInt(args[2]);
                 }
                 Player player = (Player) sender;
                 Block block = player.getTargetBlock(null, 5);
@@ -63,9 +65,15 @@ public class Commands implements CommandExecutor{
                 if (materialName.equals("MEKANISM_MACHINEBLOCK")) {
                     recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
                 }
-                if (addLimitBlock(materialName, blockChildrenId, recipeType, limitNumber)) {
-                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块 " + materialName + " 添加成功，子id: " + blockChildrenId + "，限制个数: " + limitNumber);
-
+                if (addLimitBlock(materialName, blockChildrenId, recipeType, blockSize, limitNumber)) {
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]添加成功!");
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块类型: " + materialName);
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]子id: " + blockChildrenId);
+                    if (recipeType != -1) {
+                        sender.sendMessage(ChatColor.GREEN + "[WorldLimits]MEK配方类型: " + recipeType);
+                    }
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块大小: " + blockSize);
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]限制个数: " + limitNumber);
                     WorldLimits.thisPlugin.reloadLimitData();
                 } else {
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]无法添加该方块，请查看控制台日志。");
@@ -99,12 +107,14 @@ public class Commands implements CommandExecutor{
         return false;
     }
 
-    public boolean addLimitBlock(String materialName,int blockChildrenId, int recipeType, int limitNumber) {
+    public boolean addLimitBlock(String materialName,int blockChildrenId, int recipeType, int blockSize, int limitNumber) {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
         if (recipeType != -1) {
             config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".limit", limitNumber);
+            config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".size", blockSize);
         } else {
             config.set(materialName + ":" + blockChildrenId + ".limit", limitNumber);
+            config.set(materialName + ":" + blockChildrenId + ".size", blockSize);
         }
         try {
             config.save(dataFile);

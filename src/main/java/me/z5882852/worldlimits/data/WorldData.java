@@ -1,7 +1,11 @@
 package me.z5882852.worldlimits.data;
 
 import me.z5882852.worldlimits.WorldLimits;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,20 +30,36 @@ public class WorldData {
     }
 
     public static boolean addWorldLimitsBlockNumber(String worldName, String blockId, Integer addNumber) {
-        if (WorldLimits.worldData.getInt(worldName + "." + blockId, -1) == -1) {
+        File dataFile = new File(WorldLimits.thisPlugin.getDataFolder(), "data.yml");
+        YamlConfiguration worldData = YamlConfiguration.loadConfiguration(dataFile);
+        if (worldData.getInt(worldName + "." + blockId, -1) == -1) {
             return false;
         }
-        if (WorldLimits.worldData.getInt(worldName + "." + blockId, -1) > WorldLimits.limitsData.getInt(blockId + ".limit", -1)) {
+        if (worldData.getInt(worldName + "." + blockId, -1) >= WorldLimits.limitsData.getInt(blockId + ".limit", -1)) {
             return true;
         }
-        WorldLimits.worldData.set(worldName + "." + blockId, WorldLimits.worldData.getInt(worldName + "." + blockId, -1) + addNumber);
+        worldData.set(worldName + "." + blockId, worldData.getInt(worldName + "." + blockId, -1) + addNumber);
+        try {
+            worldData.save(dataFile);
+            WorldLimits.thisPlugin.reloadWorldData();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
     public static void reduceWorldLimitsBlockNumber(String worldName, String blockId, Integer reduceNumber) {
-        if (WorldLimits.worldData.getInt(worldName + "." + blockId, -1) == -1) {
+        File dataFile = new File(WorldLimits.thisPlugin.getDataFolder(), "data.yml");
+        YamlConfiguration worldData = YamlConfiguration.loadConfiguration(dataFile);
+        if (worldData.getInt(worldName + "." + blockId, -1) == -1) {
             return;
         }
-        WorldLimits.worldData.set(worldName + "." + blockId, WorldLimits.worldData.getInt(worldName + "." + blockId, -1) - reduceNumber);
+        worldData.set(worldName + "." + blockId, worldData.getInt(worldName + "." + blockId, -1) - reduceNumber);
+        try {
+            worldData.save(dataFile);
+            WorldLimits.thisPlugin.reloadWorldData();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

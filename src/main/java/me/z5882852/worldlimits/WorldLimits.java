@@ -4,6 +4,7 @@ import me.z5882852.worldlimits.Commands.Commands;
 import me.z5882852.worldlimits.event.BlockBreak;
 import me.z5882852.worldlimits.event.BlockPlace;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -31,7 +32,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        Bukkit.getLogger().info("WorldLimits插件正在初始化中...");
+        getLogger().info("WorldLimits插件正在初始化中...");
         // 创建和加载文件
         saveDefaultConfig();
         createYamlConfiguration("data.yml");
@@ -48,7 +49,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         Bukkit.getServer().getPluginManager().registerEvents(new BlockPlace(), this);
         Bukkit.getServer().getPluginManager().registerEvents(new BlockBreak(), this);
 
-        Bukkit.getLogger().info("WorldLimits插件加载完成!");
+        getLogger().info("WorldLimits插件加载完成!");
     }
 
     @Override
@@ -78,6 +79,16 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         return YamlConfiguration.loadConfiguration(dataFile);
     }
 
+    public static void saveConfiguration(YamlConfiguration config, String fileName) {
+        File file = new File(thisPlugin.getDataFolder(), fileName);
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            thisPlugin.getLogger().severe("保存配置时出现错误：" + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public void onReload() {
         this.reloadConfig();
         cfg = this.getConfig();
@@ -85,7 +96,12 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         worldData = getYamlConfiguration("data.yml");
     }
 
-    public void reloadLimitData() {limitsData = getYamlConfiguration("limits.yml");
+    public void reloadLimitData() {
+        limitsData = getYamlConfiguration("limits.yml");
+    }
+
+    public void reloadWorldData() {
+        worldData = getYamlConfiguration("data.yml");
     }
 
     @EventHandler
@@ -133,11 +149,16 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         List<String> blockLimitExceeded = checkBlocksLimitExceeded(countBlocks);
         sendConsoleMessage("超出限制的方块有: " + blockLimitExceeded);
         for (String blockId : blockLimitExceeded) {
-            player.sendMessage("该世界中 " + countBlocks.get(blockId) + " 方块数量超出限制。");
+            player.sendMessage(ChatColor.RED + "[WorldLimits]该世界中 " + blockId + " 方块数量超出限制，数量为: " + countBlocks.get(blockId));
         }
         if (blockLimitExceeded.size() != 0) {
             if (cfg.getBoolean("clear_block")) {
                 clearBlocks(world, player, cfg.getInt("check_radius"), blockLimitExceeded);
+                if (cfg.getBoolean("clear_message", true)) {
+                    for (String blockId : blockLimitExceeded) {
+                        player.sendMessage(ChatColor.RED + "[WorldLimits]已强制清除方块: " + blockId);
+                    }
+                }
             }
         } else {
             setWorldData(worldName, countBlocks);
@@ -185,22 +206,21 @@ public final class WorldLimits extends JavaPlugin implements Listener {
                             if (ignoreBlockName.contains(block.getType().toString())) {
                                 continue;
                             }
-                            for (String limitBlockName : limitsBlockName) {
-                                String blockId;
-                                if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK")) {
-                                    blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
-                                } else {
-                                    blockId = block.getType().toString() + ":" + block.getData();
-                                }
-                                if (blockId.equals(limitBlockName)) {
-                                    int count = blockCount.get(limitBlockName) == null ? 0:blockCount.get(limitBlockName);
-                                    blockCount.put(limitBlockName, count + 1);
-                                }
+                            String blockId = getBlockId(block);
+                            if (limitsBlockName.contains(blockId)) {
+                                int count = blockCount.getOrDefault(blockId, 0);
+                                blockCount.put(blockId, count + 1);
                             }
                         }
                     }
                 }
             }
+        }
+        for (Map.Entry<String, Integer> entry : blockCount.entrySet()) {
+            String mapKey = entry.getKey();
+            Integer mapValue = entry.getValue();
+            Integer size = limitsData.getInt(mapKey + ".size");
+            blockCount.put(mapKey, mapValue / size);
         }
         sendConsoleMessage("共计算了" + chunkCount + "个区块");
         return blockCount;
@@ -240,12 +260,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
                                 continue;
                             }
                             // 检查方块的类型是否匹配
-                            String blockId;
-                            if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK")) {
-                                blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
-                            } else {
-                                blockId = block.getType().toString() + ":" + block.getData();
-                            }
+                            String blockId = getBlockId(block);
                             if (clearBlocksList.contains(blockId)) {
                                 // 清除方块
                                 block.setType(Material.AIR);
@@ -260,11 +275,18 @@ public final class WorldLimits extends JavaPlugin implements Listener {
     }
 
     public static void setWorldData(String worldName, Map<String, Integer> limitsBlock) {
+        thisPlugin.reloadWorldData();
+        worldData.set(worldName, null);
+        Set<String> limitsBlockId = limitsData.getKeys(false);
+        for (String limitBlockId : limitsBlockId) {
+            worldData.set(worldName + "." + limitBlockId, 0);
+        }
         for (Map.Entry<String, Integer> entry : limitsBlock.entrySet()) {
             String mapKey = entry.getKey();
             Integer mapValue = entry.getValue();
             worldData.set(worldName + "." + mapKey, mapValue);
         }
+        saveConfiguration(worldData, "data.yml");
     }
 
     public static int getMEKAMachineBlockRecipeType(Block block) {
@@ -294,7 +316,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
     public static String getBlockId(Block block) {
         String blockId;
-        if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK")) {
+        if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && getMEKAMachineBlockRecipeType(block) != -1) {
             blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
         } else {
             blockId = block.getType().toString() + ":" + block.getData();
