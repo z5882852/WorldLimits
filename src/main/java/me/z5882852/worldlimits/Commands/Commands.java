@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.z5882852.worldlimits.WorldLimits;
+import me.z5882852.worldlimits.gui.GUI;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,15 +63,21 @@ public class Commands implements CommandExecutor{
                 String materialName = block.getType().toString();
                 int blockChildrenId = block.getData();
                 int recipeType = -1;
+                String subTileName = null;
                 if (materialName.equals("MEKANISM_MACHINEBLOCK")) {
                     recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
+                } else if (materialName.equals("BOTANIA_SPECIALFLOWER")){
+                    subTileName = WorldLimits.getBotaniaSpecialFlower(block);
                 }
-                if (addLimitBlock(materialName, blockChildrenId, recipeType, blockSize, limitNumber)) {
+                if (addLimitBlock(materialName, blockChildrenId, recipeType, subTileName, blockSize, limitNumber)) {
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]添加成功!");
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块类型: " + materialName);
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]子id: " + blockChildrenId);
                     if (recipeType != -1) {
                         sender.sendMessage(ChatColor.GREEN + "[WorldLimits]MEK配方类型: " + recipeType);
+                    }
+                    if (subTileName != null) {
+                        sender.sendMessage(ChatColor.GREEN + "[WorldLimits]植物魔法花类型: " + subTileName);
                     }
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块大小: " + blockSize);
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]限制个数: " + limitNumber);
@@ -103,15 +110,30 @@ public class Commands implements CommandExecutor{
             } else {
                 sender.sendMessage(ChatColor.RED + "你没有执行该命令的权限。");
             }
+        } else if (args[0].equalsIgnoreCase("look")) {
+            if (sender.hasPermission("worldlimits.admin.look")) {
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(ChatColor.RED + "[WorldLimits]您不是一个玩家。");
+                    return false;
+                }
+                Player player = (Player) sender;
+                GUI.openGUI(player); // 打开GUI界面
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.RED + "你没有执行该命令的权限。");
+            }
         }
         return false;
     }
 
-    public boolean addLimitBlock(String materialName,int blockChildrenId, int recipeType, int blockSize, int limitNumber) {
+    public boolean addLimitBlock(String materialName,int blockChildrenId, int recipeType, String subTileName, int blockSize, int limitNumber) {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
         if (recipeType != -1) {
             config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".limit", limitNumber);
             config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".size", blockSize);
+        } else if(subTileName != null){
+            config.set(materialName + ":" + blockChildrenId + ":" + subTileName + ".limit", limitNumber);
+            config.set(materialName + ":" + blockChildrenId + ":" + subTileName + ".size", blockSize);
         } else {
             config.set(materialName + ":" + blockChildrenId + ".limit", limitNumber);
             config.set(materialName + ":" + blockChildrenId + ".size", blockSize);

@@ -18,6 +18,7 @@ public class WorldData {
 
     public static Map<String,Integer> getWorldAllLimitsBlock(String worldName) {
         Map<String,Integer> worldLimitsBlock = new HashMap<>();
+        WorldLimits.thisPlugin.reloadWorldData();
         Set<String> worldLimitsBlockId = WorldLimits.worldData.getConfigurationSection(worldName).getKeys(false);
         for (String worldLimitBlockId : worldLimitsBlockId) {
             worldLimitsBlock.put(worldLimitBlockId, WorldLimits.worldData.getInt(worldName + "." + worldLimitBlockId));

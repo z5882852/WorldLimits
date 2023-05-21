@@ -6,8 +6,11 @@ join_detection: true
 # 玩家进入家园时检测
 changed_world_detection: true
 
-# 是否清除超过限制的方块
+# 超过限制时是否清除方块
 clear_block: true
+
+# 只清除超出限制部分的方块,直到达到最大限制数量
+only_clear_exceeded: true
 
 # 清除时是否发送消息
 clear_message: true

@@ -3,6 +3,7 @@ package me.z5882852.worldlimits;
 import me.z5882852.worldlimits.Commands.Commands;
 import me.z5882852.worldlimits.event.BlockBreak;
 import me.z5882852.worldlimits.event.BlockPlace;
+import me.z5882852.worldlimits.gui.GUI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -46,6 +47,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         // 注册事件和命令
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getPluginCommand("worldlimits").setExecutor(new Commands(this));
+        Bukkit.getServer().getPluginManager().registerEvents(new GUI(), this);
         Bukkit.getServer().getPluginManager().registerEvents(new BlockPlace(), this);
         Bukkit.getServer().getPluginManager().registerEvents(new BlockBreak(), this);
 
@@ -146,17 +148,26 @@ public final class WorldLimits extends JavaPlugin implements Listener {
                 thisPlugin.getLogger().info(mapKey + "的数量为: " + mapValue);
             }
         }
-        List<String> blockLimitExceeded = checkBlocksLimitExceeded(countBlocks);
+        List<String> blockLimitExceeded = checkBlocksLimitAllExceeded(countBlocks);
         sendConsoleMessage("超出限制的方块有: " + blockLimitExceeded);
         for (String blockId : blockLimitExceeded) {
             player.sendMessage(ChatColor.RED + "[WorldLimits]该世界中 " + blockId + " 方块数量超出限制，数量为: " + countBlocks.get(blockId));
         }
         if (blockLimitExceeded.size() != 0) {
             if (cfg.getBoolean("clear_block")) {
-                clearBlocks(world, player, cfg.getInt("check_radius"), blockLimitExceeded);
-                if (cfg.getBoolean("clear_message", true)) {
-                    for (String blockId : blockLimitExceeded) {
-                        player.sendMessage(ChatColor.RED + "[WorldLimits]已强制清除方块: " + blockId);
+                if (!cfg.getBoolean("only_clear_exceeded")) {
+                    clearBlocks(world, player, cfg.getInt("check_radius"), blockLimitExceeded);
+                    if (cfg.getBoolean("clear_message", true)) {
+                        for (String blockId : blockLimitExceeded) {
+                            player.sendMessage(ChatColor.RED + "[WorldLimits]已强制清除方块: " + blockId);
+                        }
+                    }
+                } else {
+                    clearExceededBlocks(world, player, cfg.getInt("check_radius"), checkBlocksLimitExceeded(countBlocks));
+                    if (cfg.getBoolean("clear_message", true)) {
+                        for (String blockId : blockLimitExceeded) {
+                            player.sendMessage(ChatColor.RED + "[WorldLimits]已强制清除多余方块: " + blockId);
+                        }
                     }
                 }
             }
@@ -226,13 +237,26 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         return blockCount;
     }
 
-    public static List<String> checkBlocksLimitExceeded(Map<String, Integer> blocksCount) {
+    public static List<String> checkBlocksLimitAllExceeded(Map<String, Integer> blocksCount) {
         List<String> blockLimitExceeded = new ArrayList<>();
         Set<String> limitsBlockList = limitsData.getKeys(false);
         for (String limitBlockName : limitsBlockList) {
             if (blocksCount.get(limitBlockName) != null) {
                 if (limitsData.getInt(limitBlockName + ".limit") < blocksCount.get(limitBlockName)) {
                     blockLimitExceeded.add(limitBlockName);
+                }
+            }
+        }
+        return blockLimitExceeded;
+    }
+
+    public static Map<String, Integer> checkBlocksLimitExceeded(Map<String, Integer> blocksCount) {
+        Map<String, Integer> blockLimitExceeded = new HashMap<>();
+        Set<String> limitsBlockList = limitsData.getKeys(false);
+        for (String limitBlockName : limitsBlockList) {
+            if (blocksCount.get(limitBlockName) != null) {
+                if (limitsData.getInt(limitBlockName + ".limit") < blocksCount.get(limitBlockName)) {
+                    blockLimitExceeded.put(limitBlockName, blocksCount.get(limitBlockName) - limitsData.getInt(limitBlockName + ".limit"));
                 }
             }
         }
@@ -274,6 +298,49 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         setWorldData(world.getName(), countBlocksInRadius(world, player, cfg.getInt("check_radius")));
     }
 
+    public static void clearExceededBlocks(World world, Player player, int radius, Map<String, Integer> clearExceededBlocksList) {
+        int playerChunkX = player.getLocation().getBlockX() >> 4;
+        int playerChunkZ = player.getLocation().getBlockZ() >> 4;
+
+        List<String> ignoreBlockName = cfg.getStringList("ignore_block_name");
+
+        int chunkRadius = radius >> 4;  // 区块半径
+        for (int chunkX = playerChunkX - chunkRadius; chunkX <= playerChunkX + chunkRadius; chunkX++) {
+            for (int chunkZ = playerChunkZ - chunkRadius; chunkZ <= playerChunkZ + chunkRadius; chunkZ++) {
+                // 逐块加载区块
+                if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                    world.loadChunk(chunkX, chunkZ, true);
+                }
+                for (int x = 0; x < 16; x++) {
+                    for (int y = 0; y < world.getMaxHeight(); y++) {
+                        for (int z = 0; z < 16; z++) {
+                            Block block = world.getBlockAt(chunkX * 16 + x, y, chunkZ * 16 + z);
+                            if (ignoreBlockName.contains(block.getType().toString())) {
+                                continue;
+                            }
+                            // 检查方块的类型是否匹配
+                            String blockId = getBlockId(block);
+                            for (Map.Entry<String, Integer> entry : clearExceededBlocksList.entrySet()) {
+                                String exceededBlockName = entry.getKey();
+                                Integer count = entry.getValue();
+                                if (exceededBlockName.equals(blockId)) {
+                                    if (count <= 0) {
+                                        break;
+                                    }
+                                    block.setType(Material.AIR);
+                                    clearExceededBlocksList.put(exceededBlockName, count - 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // 重新记录世界限制数量
+        setWorldData(world.getName(), countBlocksInRadius(world, player, cfg.getInt("check_radius")));
+    }
+
     public static void setWorldData(String worldName, Map<String, Integer> limitsBlock) {
         thisPlugin.reloadWorldData();
         worldData.set(worldName, null);
@@ -305,7 +372,6 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         String regex = "recipeType:(\\d{1,2})";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(inputString);
-
         if (matcher.find()) {
             String recipeTypeValue = matcher.group(1);
             return Integer.parseInt(recipeTypeValue);
@@ -314,10 +380,34 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         }
     }
 
+    public static String getBotaniaSpecialFlower(Block block) {
+        String blockNBT = IBlock.getBlockNBT(block);
+        String  subTileName = extractSubTileName(blockNBT);
+        return subTileName;
+    }
+
+    /**
+     * 提取NBT数据中subTileNmae的值
+     * @param inputString BNT数据字符串
+     * @return String:subTileNmae
+     */
+    public static String extractSubTileName(String inputString) {
+        String regex = "subTileName:\"(.*?)\"";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(inputString);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
     public static String getBlockId(Block block) {
         String blockId;
         if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && getMEKAMachineBlockRecipeType(block) != -1) {
             blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
+        } else if (block.getType().toString().equals("BOTANIA_SPECIALFLOWER") && getBotaniaSpecialFlower(block) != null) {
+            blockId = block.getType().toString() + ":" + block.getData() + ":" + getBotaniaSpecialFlower(block);
         } else {
             blockId = block.getType().toString() + ":" + block.getData();
         }
