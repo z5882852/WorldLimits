@@ -36,7 +36,11 @@ public class GUI implements Listener {
             }
             //ItemStack limitItem = addLoreToItem(getItemFromBlock(block, amount), "数量: &4" + count);
             ItemStack limitItem = (ItemStack) block.getDrops().toArray()[0];
-            limitItem = addLoreToItem(limitItem, "&6方块标识: &3" + WorldLimits.getBlockId(block) + " \n&6数量: &2" + count + "\n&6限制数量: &4" + WorldLimits.getLimitNumber(block));
+            List<String> loreText = new ArrayList<>();
+            loreText.add("&6方块标识: &3" + WorldLimits.getBlockId(block));
+            loreText.add("&6数量: &2" + count);
+            loreText.add("&6限制数量: &4" + WorldLimits.getLimitNumber(block));
+            limitItem = addLoreToItem(limitItem, loreText);
             limitItem.setAmount(amount);
             limitItem = setItemNBT(limitItem, block);
             items.add(limitItem);
@@ -82,12 +86,15 @@ public class GUI implements Listener {
         return item;
     }
 
-    public static ItemStack addLoreToItem(ItemStack item, String loreText) {
+    public static ItemStack addLoreToItem(ItemStack item, List<String> loreTextLists) {
         if (item != null) {
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                loreText = ChatColor.translateAlternateColorCodes('&', loreText);
-                meta.setLore(Collections.singletonList(loreText));
+                List<String> lore = new ArrayList<>();
+                for (String loreText : loreTextLists) {
+                    lore.add(ChatColor.translateAlternateColorCodes('&', loreText));
+                }
+                meta.setLore(lore);
                 item.setItemMeta(meta);
             }
         }

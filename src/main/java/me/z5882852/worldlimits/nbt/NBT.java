@@ -40,6 +40,19 @@ public class NBT {
         return null;
     }
 
+    public static int getBlockTargetNBTInt(Block block, String targetKey) {
+        CraftWorld craftWorld = (CraftWorld) block.getWorld();
+        net.minecraft.server.v1_12_R1.World nmsWorld = craftWorld.getHandle();
+        BlockPosition blockPosition = new BlockPosition(block.getX(), block.getY(), block.getZ());
+        TileEntity tileEntity = nmsWorld.getTileEntity(blockPosition);
+        if (tileEntity != null) {
+            NBTTagCompound nbtTagCompound = new NBTTagCompound();
+            tileEntity.save(nbtTagCompound);
+            return nbtTagCompound.getInt(targetKey);
+        }
+        return -1;
+    }
+
     public static String getItemNBT(ItemStack itemStack) {
         net.minecraft.server.v1_12_R1.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         if (nmsItemStack.hasTag()) {

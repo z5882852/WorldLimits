@@ -359,9 +359,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
     }
 
     public static int getMEKAMachineBlockRecipeType(Block block) {
-        int recipeType = -1;
-        String recipeTypeString = NBT.getBlockTargetNBT(block, "recipeType");
-        recipeType = Integer.parseInt(recipeTypeString);
+        int recipeType =  NBT.getBlockTargetNBTInt(block, "recipeType");
         return recipeType;
     }
 
