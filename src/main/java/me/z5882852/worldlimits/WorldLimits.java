@@ -17,13 +17,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import pers.tany.yukinoaapi.interfacepart.block.IBlock;
+
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import me.z5882852.worldlimits.nbt.NBT;
 
 public final class WorldLimits extends JavaPlugin implements Listener {
     public static WorldLimits thisPlugin;
@@ -358,7 +360,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
     public static int getMEKAMachineBlockRecipeType(Block block) {
         int recipeType = -1;
-        String blockNBT = IBlock.getBlockNBT(block);
+        String blockNBT = NBT.getBlockNBT(block);
         recipeType = extractRecipeType(blockNBT);
         return recipeType;
     }
@@ -381,7 +383,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
     }
 
     public static String getBotaniaSpecialFlower(Block block) {
-        String blockNBT = IBlock.getBlockNBT(block);
+        String blockNBT = NBT.getBlockNBT(block);
         String  subTileName = extractSubTileName(blockNBT);
         return subTileName;
     }
@@ -416,7 +418,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
     public static int getLimitNumber(Block block) {
         String blockId = getBlockId(block);
-        int limitNumber = cfg.getInt(blockId + ".limit", 0);
+        int limitNumber = limitsData.getInt(blockId + ".limit", 0);
         return limitNumber;
     }
 

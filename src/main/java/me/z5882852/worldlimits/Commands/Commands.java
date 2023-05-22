@@ -19,6 +19,8 @@ import me.z5882852.worldlimits.gui.GUI;
 import java.io.File;
 import java.io.IOException;
 
+import me.z5882852.worldlimits.nbt.NBT;
+
 public class Commands implements CommandExecutor{
     private File dataFile;
     private JavaPlugin plugin;
@@ -55,6 +57,7 @@ public class Commands implements CommandExecutor{
                 }
                 Player player = (Player) sender;
                 Block block = player.getTargetBlock(null, 5);
+                System.out.println(NBT.getBlockNBT(block));
                 int limitNumber = Integer.parseInt(args[1]);
                 if (block == null) {
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]您需要对准方块。");
