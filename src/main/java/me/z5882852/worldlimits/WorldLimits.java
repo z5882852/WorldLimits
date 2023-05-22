@@ -360,48 +360,13 @@ public final class WorldLimits extends JavaPlugin implements Listener {
 
     public static int getMEKAMachineBlockRecipeType(Block block) {
         int recipeType = -1;
-        String blockNBT = NBT.getBlockNBT(block);
-        recipeType = extractRecipeType(blockNBT);
+        String recipeTypeString = NBT.getBlockTargetNBT(block, "recipeType");
+        recipeType = Integer.parseInt(recipeTypeString);
         return recipeType;
     }
 
-    /**
-     * 提取NBT数据中RecipeType的值
-     * @param inputString BNT数据字符串
-     * @return int:RecipeType
-     */
-    public static int extractRecipeType(String inputString) {
-        String regex = "recipeType:(\\d{1,2})";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(inputString);
-        if (matcher.find()) {
-            String recipeTypeValue = matcher.group(1);
-            return Integer.parseInt(recipeTypeValue);
-        } else {
-            return -1;
-        }
-    }
-
     public static String getBotaniaSpecialFlower(Block block) {
-        String blockNBT = NBT.getBlockNBT(block);
-        String  subTileName = extractSubTileName(blockNBT);
-        return subTileName;
-    }
-
-    /**
-     * 提取NBT数据中subTileNmae的值
-     * @param inputString BNT数据字符串
-     * @return String:subTileNmae
-     */
-    public static String extractSubTileName(String inputString) {
-        String regex = "subTileName:\"(.*?)\"";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(inputString);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
+        return NBT.getBlockTargetNBT(block, "subTileName");
     }
 
     public static String getBlockId(Block block) {

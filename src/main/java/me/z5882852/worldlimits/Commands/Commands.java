@@ -11,6 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.z5882852.worldlimits.WorldLimits;
@@ -57,7 +58,6 @@ public class Commands implements CommandExecutor{
                 }
                 Player player = (Player) sender;
                 Block block = player.getTargetBlock(null, 5);
-                System.out.println(NBT.getBlockNBT(block));
                 int limitNumber = Integer.parseInt(args[1]);
                 if (block == null) {
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]您需要对准方块。");

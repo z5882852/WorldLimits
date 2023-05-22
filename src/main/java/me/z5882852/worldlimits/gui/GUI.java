@@ -1,6 +1,7 @@
 package me.z5882852.worldlimits.gui;
 
 import me.z5882852.worldlimits.WorldLimits;
+import me.z5882852.worldlimits.nbt.NBT;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -37,6 +38,7 @@ public class GUI implements Listener {
             ItemStack limitItem = (ItemStack) block.getDrops().toArray()[0];
             limitItem = addLoreToItem(limitItem, "&6方块标识: &3" + WorldLimits.getBlockId(block) + " \n&6数量: &2" + count + "\n&6限制数量: &4" + WorldLimits.getLimitNumber(block));
             limitItem.setAmount(amount);
+            limitItem = setItemNBT(limitItem, block);
             items.add(limitItem);
         }
 
@@ -92,7 +94,6 @@ public class GUI implements Listener {
         return item;
     }
 
-
     public static Map<Block, Integer> countBlocksInRadius(World world, Player player) {
         int playerChunkX = player.getLocation().getBlockX() >> 4;  // 玩家所在区块的X坐标
         int playerChunkZ = player.getLocation().getBlockZ() >> 4;  // 玩家所在区块的Z坐标
@@ -147,4 +148,14 @@ public class GUI implements Listener {
         return blockCount;
     }
 
+    public static ItemStack setItemNBT(ItemStack item, Block block) {
+        if ((block.getType().toString().equals("BOTANIA_SPECIALFLOWER") || block.getType().toString().equals("BOTANIA_FLOATINGSPECIALFLOWER")) && WorldLimits.getBotaniaSpecialFlower(block) != null) {
+            String subTileName = WorldLimits.getBotaniaSpecialFlower(block);
+            item = NBT.setItemNBT(item, "type", subTileName);
+        } else if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && WorldLimits.getMEKAMachineBlockRecipeType(block) != -1) {
+            int recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
+            item = NBT.setItemNBT(item, "recipeType", recipeType);
+        }
+        return item;
+    }
 }
