@@ -66,7 +66,7 @@ public class Commands implements CommandExecutor{
                 String subTileName = null;
                 if (materialName.equals("MEKANISM_MACHINEBLOCK")) {
                     recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
-                } else if (materialName.equals("BOTANIA_SPECIALFLOWER")){
+                } else if (materialName.equals("BOTANIA_SPECIALFLOWER") || materialName.equals("BOTANIA_FLOATINGSPECIALFLOWER")){
                     subTileName = WorldLimits.getBotaniaSpecialFlower(block);
                 }
                 if (addLimitBlock(materialName, blockChildrenId, recipeType, subTileName, blockSize, limitNumber)) {

@@ -23,7 +23,6 @@ public class GUI implements Listener {
 
     // 创建GUI界面的方法
     public static Inventory createGUI(Map<Block, Integer> worldLimitBlocks) {
-        System.out.println(worldLimitBlocks.size());
         List<ItemStack> items = new ArrayList<>();
         for (Map.Entry<Block, Integer> worldLimitBlock : worldLimitBlocks.entrySet()) {
             Block block = worldLimitBlock.getKey();
@@ -34,7 +33,11 @@ public class GUI implements Listener {
             } else {
                 amount = block.getType().getMaxStackSize();
             }
-            ItemStack limitItem = addLoreToItem(getItemFromBlock(block, amount), "数量: &4" + count);
+            //ItemStack limitItem = addLoreToItem(getItemFromBlock(block, amount), "数量: &4" + count);
+            ItemStack limitItem = (ItemStack) block.getDrops().toArray()[0];
+            System.out.println(block.getDrops());
+            limitItem = addLoreToItem(limitItem, "&6方块标识: &3" + WorldLimits.getBlockId(block) + " \n&6数量: &2" + count + "\n&6限制数量: &4" + WorldLimits.getLimitNumber(block));
+            limitItem.setAmount(amount);
             items.add(limitItem);
         }
 

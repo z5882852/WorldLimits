@@ -406,7 +406,7 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         String blockId;
         if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && getMEKAMachineBlockRecipeType(block) != -1) {
             blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
-        } else if (block.getType().toString().equals("BOTANIA_SPECIALFLOWER") && getBotaniaSpecialFlower(block) != null) {
+        } else if ((block.getType().toString().equals("BOTANIA_SPECIALFLOWER") || block.getType().toString().equals("BOTANIA_FLOATINGSPECIALFLOWER")) && getBotaniaSpecialFlower(block) != null) {
             blockId = block.getType().toString() + ":" + block.getData() + ":" + getBotaniaSpecialFlower(block);
         } else {
             blockId = block.getType().toString() + ":" + block.getData();
@@ -414,9 +414,16 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         return blockId;
     }
 
+    public static int getLimitNumber(Block block) {
+        String blockId = getBlockId(block);
+        int limitNumber = cfg.getInt(blockId + ".limit", 0);
+        return limitNumber;
+    }
+
     public static boolean isIgnoreBlock(Block block) {
         return cfg.getStringList("ignore_block_name").contains(block.getType().toString());
     }
+
     public static boolean isLimitBlock(Block block) {
         int limitNumber = limitsData.getInt(getBlockId(block) + ".limit", -1);
         return limitNumber != -1;
