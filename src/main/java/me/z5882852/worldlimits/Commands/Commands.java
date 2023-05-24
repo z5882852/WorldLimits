@@ -63,24 +63,13 @@ public class Commands implements CommandExecutor{
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]您需要对准方块。");
                     return true;
                 }
-                String materialName = block.getType().toString();
-                int blockChildrenId = block.getData();
-                int recipeType = -1;
-                String subTileName = null;
-                if (materialName.equals("MEKANISM_MACHINEBLOCK")) {
-                    recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
-                } else if (materialName.equals("BOTANIA_SPECIALFLOWER") || materialName.equals("BOTANIA_FLOATINGSPECIALFLOWER")){
-                    subTileName = WorldLimits.getBotaniaSpecialFlower(block);
-                }
-                if (addLimitBlock(materialName, blockChildrenId, recipeType, subTileName, blockSize, limitNumber)) {
+                String blockId = WorldLimits.getBlockId(block);
+                if (addLimitBlock(blockId, blockSize, limitNumber)) {
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]添加成功!");
-                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块类型: " + materialName);
-                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]子id: " + blockChildrenId);
-                    if (recipeType != -1) {
-                        sender.sendMessage(ChatColor.GREEN + "[WorldLimits]MEK配方类型: " + recipeType);
-                    }
-                    if (subTileName != null) {
-                        sender.sendMessage(ChatColor.GREEN + "[WorldLimits]植物魔法花类型: " + subTileName);
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块类型: " + block.getType().toString());
+                    sender.sendMessage(ChatColor.GREEN + "[WorldLimits]子id: " + block.getData());
+                    if (WorldLimits.getBlockNBTId(block) != null) {
+                        sender.sendMessage(ChatColor.GREEN + "[WorldLimits]NBT标识: " + WorldLimits.getBlockNBTId(block));
                     }
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]方块大小: " + blockSize);
                     sender.sendMessage(ChatColor.GREEN + "[WorldLimits]限制个数: " + limitNumber);
@@ -114,7 +103,7 @@ public class Commands implements CommandExecutor{
                 sender.sendMessage(ChatColor.RED + "你没有执行该命令的权限。");
             }
         } else if (args[0].equalsIgnoreCase("look")) {
-            if (sender.hasPermission("worldlimits.admin.look")) {
+            if (sender.hasPermission("worldlimits.default.look")) {
                 if (!(sender instanceof Player)) {
                     sender.sendMessage(ChatColor.RED + "[WorldLimits]您不是一个玩家。");
                     return false;
@@ -129,18 +118,10 @@ public class Commands implements CommandExecutor{
         return false;
     }
 
-    public boolean addLimitBlock(String materialName,int blockChildrenId, int recipeType, String subTileName, int blockSize, int limitNumber) {
+    public boolean addLimitBlock(String blockId, int blockSize, int limitNumber) {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
-        if (recipeType != -1) {
-            config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".limit", limitNumber);
-            config.set(materialName + ":" + blockChildrenId + ":" + recipeType + ".size", blockSize);
-        } else if(subTileName != null){
-            config.set(materialName + ":" + blockChildrenId + ":" + subTileName + ".limit", limitNumber);
-            config.set(materialName + ":" + blockChildrenId + ":" + subTileName + ".size", blockSize);
-        } else {
-            config.set(materialName + ":" + blockChildrenId + ".limit", limitNumber);
-            config.set(materialName + ":" + blockChildrenId + ".size", blockSize);
-        }
+        config.set(blockId + ".limit", limitNumber);
+        config.set(blockId + ".size", blockSize);
         try {
             config.save(dataFile);
             return true;

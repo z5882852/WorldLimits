@@ -27,7 +27,7 @@ public class NBT {
         return null;
     }
 
-    public static String getBlockTargetNBT(Block block, String targetKey) {
+    public static String getBlockTargetNBTString(Block block, String targetKey) {
         CraftWorld craftWorld = (CraftWorld) block.getWorld();
         net.minecraft.server.v1_12_R1.World nmsWorld = craftWorld.getHandle();
         BlockPosition blockPosition = new BlockPosition(block.getX(), block.getY(), block.getZ());

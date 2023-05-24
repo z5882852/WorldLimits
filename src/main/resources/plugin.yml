@@ -12,7 +12,11 @@ permissions:
   worldlimits.check:
     description: "免检查限制方块权限"
     default: false
-
+  worldlimits.default:
+    description: "玩家默认权限"
+    default: true
+    children:
+      worldlimits.default.look: true
   worldlimits.admin:
     description: "所有管理员权限"
     default: op

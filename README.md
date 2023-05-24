@@ -22,7 +22,7 @@
 
 ## 配置
 
-插件的配置文件`config.yml`位于插件目录下的`BlockLimitPlugin`文件夹中。您可以根据需要进行以下配置：
+插件的配置文件`config.yml`位于插件目录下的`WorldLimits`文件夹中。您可以根据需要进行以下配置：
 
 [配置文件](https://github.com/z5882852/WorldLimits/blob/mai/src/main/resources/config.yml)
 

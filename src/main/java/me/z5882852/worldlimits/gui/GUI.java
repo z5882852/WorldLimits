@@ -34,9 +34,16 @@ public class GUI implements Listener {
             } else {
                 amount = block.getType().getMaxStackSize();
             }
-            //ItemStack limitItem = addLoreToItem(getItemFromBlock(block, amount), "数量: &4" + count);
-            ItemStack limitItem = (ItemStack) block.getDrops().toArray()[0];
+            ItemStack limitItem = getBlockToItem(block);
+            if (limitItem == null) {
+                WorldLimits.thisPlugin.getLogger().severe("无法获取 " + block.getType() + " ItemStack对象!");
+                continue;
+            }
+            String blockDescription = WorldLimits.getLimitDescription(block);
             List<String> loreText = new ArrayList<>();
+            if (blockDescription != null) {
+                loreText.add("&6方块描述: " + blockDescription);
+            }
             loreText.add("&6方块标识: &3" + WorldLimits.getBlockId(block));
             loreText.add("&6数量: &2" + count);
             loreText.add("&6限制数量: &4" + WorldLimits.getLimitNumber(block));
@@ -78,11 +85,45 @@ public class GUI implements Listener {
         player.openInventory(gui);
     }
 
-    public static ItemStack getItemFromBlock(Block block, int amount) {
-        if (amount > 64) {
-            amount = 64;
+    public static ItemStack getItem(String materialName, byte dataId) {
+        if (Material.getMaterial(materialName) == null){
+            return null;
         }
-        ItemStack item = new ItemStack(block.getType(), amount);;
+        ItemStack item = new ItemStack(Material.getMaterial(materialName), 1, (short) 1.0, dataId);
+        return item;
+    }
+
+    public static ItemStack getBlockToItem(Block block) {
+        Set<String> nbtBlocks = WorldLimits.thisPlugin.getConfig().getConfigurationSection("nbt_block_name").getKeys(false);
+        if (nbtBlocks.contains(block.getType().toString())) {
+            if (WorldLimits.thisPlugin.getConfig().getBoolean("nbt_block_name." + block.getType().toString() + ".enable_id", false)) {
+                if (WorldLimits.getBlockNBTId(block) != null) {
+                    byte dataId = (byte) WorldLimits.thisPlugin.getConfig().getInt("nbt_block_name." + block.getType().toString() + ".id." + WorldLimits.getBlockNBTId(block), -1);
+                    if (dataId != -1) {
+                        return getItem(block, dataId);
+                    }
+                }
+            }
+        }
+        return getItem(block);
+    }
+
+    public static ItemStack getItem(Block block, byte dataId) {
+        String materialName = block.getType().toString();
+        if (Material.getMaterial(materialName) == null){
+            return null;
+        }
+        ItemStack item = new ItemStack(Material.getMaterial(materialName), 1, (short) 1.0, dataId);
+        return item;
+    }
+
+    public static ItemStack getItem(Block block) {
+        String materialName = block.getType().toString();
+        Byte dataId = block.getData();
+        if (Material.getMaterial(materialName) == null){
+            return null;
+        }
+        ItemStack item = new ItemStack(Material.getMaterial(materialName), 1, (short) 1.0, dataId);
         return item;
     }
 
@@ -156,12 +197,23 @@ public class GUI implements Listener {
     }
 
     public static ItemStack setItemNBT(ItemStack item, Block block) {
-        if ((block.getType().toString().equals("BOTANIA_SPECIALFLOWER") || block.getType().toString().equals("BOTANIA_FLOATINGSPECIALFLOWER")) && WorldLimits.getBotaniaSpecialFlower(block) != null) {
-            String subTileName = WorldLimits.getBotaniaSpecialFlower(block);
-            item = NBT.setItemNBT(item, "type", subTileName);
-        } else if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && WorldLimits.getMEKAMachineBlockRecipeType(block) != -1) {
-            int recipeType = WorldLimits.getMEKAMachineBlockRecipeType(block);
-            item = NBT.setItemNBT(item, "recipeType", recipeType);
+        Set<String> nbtBlocks = WorldLimits.thisPlugin.getConfig().getConfigurationSection("nbt_block_name").getKeys(false);
+        if (nbtBlocks.contains(block.getType().toString())) {
+            if (WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".item_nbt_key", null) == null) {
+                return item;
+            }
+            if (WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".nbt_type", null).equals("string")) {
+                String nbtData = NBT.getBlockTargetNBTString(block, WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".block_nbt_key", null));
+                if (nbtData != null || WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".item_nbt_key", null) != null) {
+                    item = NBT.setItemNBT(item, WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".item_nbt_key", null), nbtData);
+                }
+            } else {
+                int nbtData = NBT.getBlockTargetNBTInt(block, WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".block_nbt_key", null));
+                if (nbtData != -1) {
+                    item = NBT.setItemNBT(item, WorldLimits.thisPlugin.getConfig().getString("nbt_block_name." + block.getType().toString() + ".item_nbt_key", null), nbtData);
+                }
+            }
+
         }
         return item;
     }

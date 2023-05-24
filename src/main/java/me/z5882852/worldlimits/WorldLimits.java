@@ -358,31 +358,44 @@ public final class WorldLimits extends JavaPlugin implements Listener {
         saveConfiguration(worldData, "data.yml");
     }
 
-    public static int getMEKAMachineBlockRecipeType(Block block) {
-        int recipeType =  NBT.getBlockTargetNBTInt(block, "recipeType");
-        return recipeType;
-    }
-
-    public static String getBotaniaSpecialFlower(Block block) {
-        return NBT.getBlockTargetNBT(block, "subTileName");
-    }
 
     public static String getBlockId(Block block) {
-        String blockId;
-        if (block.getType().toString().equals("MEKANISM_MACHINEBLOCK") && getMEKAMachineBlockRecipeType(block) != -1) {
-            blockId = block.getType().toString() + ":" + block.getData() + ":" + getMEKAMachineBlockRecipeType(block);
-        } else if ((block.getType().toString().equals("BOTANIA_SPECIALFLOWER") || block.getType().toString().equals("BOTANIA_FLOATINGSPECIALFLOWER")) && getBotaniaSpecialFlower(block) != null) {
-            blockId = block.getType().toString() + ":" + block.getData() + ":" + getBotaniaSpecialFlower(block);
-        } else {
-            blockId = block.getType().toString() + ":" + block.getData();
+        Set<String> nbtBlocks = cfg.getConfigurationSection("nbt_block_name").getKeys(false);
+        if (nbtBlocks.contains(block.getType().toString())) {
+            if (cfg.getString("nbt_block_name." + block.getType().toString() + ".nbt_type", null).equals("string")) {
+                String nbtData = NBT.getBlockTargetNBTString(block, cfg.getString("nbt_block_name." + block.getType().toString() + ".block_nbt_key", null));
+                if (nbtData != null) {
+                    return block.getType().toString() + ":" + block.getData() + ":" + nbtData;
+                }
+            } else {
+                int nbtData = NBT.getBlockTargetNBTInt(block, cfg.getString("nbt_block_name." + block.getType().toString() + ".block_nbt_key", null));
+                if (nbtData != -1) {
+                    return block.getType().toString() + ":" + block.getData() + ":" + nbtData;
+                }
+            }
+
         }
-        return blockId;
+        return block.getType().toString() + ":" + block.getData();
+    }
+
+    public static String getBlockNBTId(Block block) {
+        String blockId = getBlockId(block);
+        if (blockId.split(":").length > 2) {
+            String blockName = block.getType().toString() + ":" + block.getData();
+            return blockId.replace(blockName + ":", "");
+        }
+        return null;
     }
 
     public static int getLimitNumber(Block block) {
         String blockId = getBlockId(block);
         int limitNumber = limitsData.getInt(blockId + ".limit", 0);
         return limitNumber;
+    }
+
+    public static String getLimitDescription(Block block) {
+        String blockId = getBlockId(block);
+        return limitsData.getString(blockId + ".description", null);
     }
 
     public static boolean isIgnoreBlock(Block block) {

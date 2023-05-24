@@ -31,3 +31,25 @@ ignore_block_name:
   - "STONE"
   - "DIRT"
   - "LEAVES"
+
+# 需要NBT标识符的方块名
+nbt_block_name:
+  MEKANISM_MACHINEBLOCK:
+    block_nbt_key: "recipeType"
+    item_nbt_key : "recipeType"
+    nbt_type: "int"
+  BOTANIA_SPECIALFLOWER:
+    block_nbt_key: "subTileName"
+    item_nbt_key: "type"
+    nbt_type: "string"
+  BOTANIA_FLOATINGSPECIALFLOWER:
+    block_nbt_key: "subTileName"
+    item_nbt_key: "type"
+    nbt_type: "string"
+  IC2_TE:
+    block_nbt_key: "id"
+    item_nbt_key: ""
+    nbt_type: "string"
+    enable_id: true
+    id:
+      ic2:replicator: 63
