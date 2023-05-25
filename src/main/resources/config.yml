@@ -33,6 +33,12 @@ ignore_block_name:
   - "LEAVES"
 
 # 需要NBT标识符的方块名
+# 使用方法:
+#  方块Type:
+#   block_nbt_key(方块的NBT标识)
+#   item_nbt_key(物品的NBT标识)
+#   nbt_type(NBT标识的类型,填"string"或者"int")
+#   enable_id(启用NBT标识映射子id)
 nbt_block_name:
   MEKANISM_MACHINEBLOCK:
     block_nbt_key: "recipeType"
