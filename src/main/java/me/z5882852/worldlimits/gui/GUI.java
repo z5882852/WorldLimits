@@ -23,7 +23,7 @@ public class GUI implements Listener {
     }
 
     // 创建GUI界面的方法
-    public static Inventory createGUI(Map<Block, Integer> worldLimitBlocks) {
+    public static Inventory createGUI(Map<Block, Integer> worldLimitBlocks, int page) {
         List<ItemStack> items = new ArrayList<>();
         for (Map.Entry<Block, Integer> worldLimitBlock : worldLimitBlocks.entrySet()) {
             Block block = worldLimitBlock.getKey();
@@ -53,14 +53,35 @@ public class GUI implements Listener {
             items.add(limitItem);
         }
 
-        Inventory gui = Bukkit.createInventory(null, 54, "家园限制方块统计");
-
-        for (int i = 0; i < items.size(); i++) {
-            if (i == 54) {
-                break;
-            }
+        Inventory gui = Bukkit.createInventory(null, 54, "家园限制方块统计-第" + (page + 1) + "页");
+        int startIndex = page * 45; // 起始索引
+        int endIndex = startIndex + 45; // 结束索引
+        for (int i = startIndex; i < endIndex && i < items.size(); i++) {
             ItemStack item = items.get(i);
-            gui.setItem(i, item);
+            if (item == null) {
+                continue;
+            }
+            gui.setItem(i - startIndex, item);
+        }
+
+        ItemStack infoItem = new ItemStack(Material.DOUBLE_PLANT, 1, (short) 1.0, (byte) 0);
+        ItemMeta infoItemMeta = infoItem.getItemMeta();
+        infoItemMeta.setDisplayName(ChatColor.GOLD + "第" + (page + 1) + "页");
+        infoItem.setItemMeta(infoItemMeta);
+        gui.setItem(49, infoItem);
+        if (page != 0) {
+            ItemStack previousItem = new ItemStack(Material.IRON_BLOCK, 1, (short) 1.0, (byte) 0);
+            ItemMeta previousItemMeta = previousItem.getItemMeta();
+            previousItemMeta.setDisplayName(ChatColor.GOLD + "上一页");
+            previousItem.setItemMeta(previousItemMeta);
+            gui.setItem(45, previousItem);
+        }
+        if (items.size() > 45) {
+            ItemStack nextItem = new ItemStack(Material.GOLD_BLOCK, 1, (short) 1.0, (byte) 0);
+            ItemMeta nextItemMeta = nextItem.getItemMeta();
+            nextItemMeta.setDisplayName(ChatColor.GOLD + "下一页");
+            nextItem.setItemMeta(nextItemMeta);
+            gui.setItem(53, nextItem);
         }
         return gui;
     }
@@ -68,20 +89,25 @@ public class GUI implements Listener {
     // 处理玩家点击GUI的事件
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().getTitle().equals("家园限制方块统计")) {
+        if (event.getView().getTitle().split("-")[0].equals("家园限制方块统计")) {
             event.setCancelled(true); // 取消玩家的点击事件
-
-            if (event.getCurrentItem() != null && event.getCurrentItem().getType() == Material.DIAMOND) {
-                // 点击了钻石物品
+            int page = Integer.parseInt(event.getView().getTitle().split("-")[1].replace("第", "").replace("页", "")) -1;
+            if (event.getCurrentItem() != null && event.getSlot()==45) {
+                // 上一页
                 Player player = (Player) event.getWhoClicked();
-                player.sendMessage("You clicked the diamond!");
+                openGUI(player, page - 1);
+            }
+            if (event.getCurrentItem() != null && event.getSlot()==53) {
+                // 下一页
+                Player player = (Player) event.getWhoClicked();
+                openGUI(player, page + 1);
             }
         }
     }
 
-    public static void openGUI(Player player) {
+    public static void openGUI(Player player, int page) {
         Map<Block, Integer> worldLimitBlocks = countBlocksInRadius(player.getWorld(), player);
-        Inventory gui = createGUI(worldLimitBlocks);
+        Inventory gui = createGUI(worldLimitBlocks, page);
         player.openInventory(gui);
     }
 

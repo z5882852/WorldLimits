@@ -53,3 +53,8 @@ nbt_block_name:
     enable_id: true
     id:
       ic2:replicator: 63
+      ic2:matter_generator: 61
+  MEKANISM_TRANSMITTER:
+    block_nbt_key: "tier"
+    item_nbt_key: "tier"
+    nbt_type: "int"

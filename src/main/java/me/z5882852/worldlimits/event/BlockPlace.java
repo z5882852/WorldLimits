@@ -16,7 +16,10 @@ public class BlockPlace implements Listener{
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        // 在这里处理方块破坏事件的逻辑
+        // 处理方块破坏事件的逻辑
+        if (WorldLimits.thisPlugin.getConfig().getStringList("ignore_world_name").contains(event.getPlayer().getWorld().getName())) {
+            return;
+        }
         if (WorldLimits.isIgnoreBlock(event.getBlock())) {
             return;
         }

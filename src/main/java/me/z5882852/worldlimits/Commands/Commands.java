@@ -109,7 +109,7 @@ public class Commands implements CommandExecutor{
                     return false;
                 }
                 Player player = (Player) sender;
-                GUI.openGUI(player); // 打开GUI界面
+                GUI.openGUI(player, 0); // 打开GUI界面
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "你没有执行该命令的权限。");
