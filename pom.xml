@@ -6,7 +6,7 @@
 
     <groupId>me.z5882852</groupId>
     <artifactId>WorldLimits</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>WorldLimits</name>
